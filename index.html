@@ -36,7 +36,7 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#4a90d9}
 </head>
 <body>
 <div class="card">
-<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-10</span></h1>
+<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-11</span></h1>
 <div class="sub">测温录入 → 自动算等效龄期 De → 录入各龄期强度 → 自动生成公式 → 预测强度</div>
 
 <div class="syncbox" style="background:#fff8e6;border-color:#e3cf8f">
@@ -129,7 +129,7 @@ function mkRow(t,v,forcedH){
   btn.onclick=function(){if(tb.rows.length<=2)return;tr.parentNode.removeChild(tr);calcTemp()};
   td1.appendChild(idt);td2.appendChild(i1);td3.appendChild(i2);td4.appendChild(btn);
   tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
-  idt.addEventListener('input',calcTemp);i2.addEventListener('input',calcTemp);
+  idt.addEventListener('input',function(){var h=toHours(idt.value);i1.value=isNaN(h)?'':h;calcTemp()});i2.addEventListener('input',calcTemp);
   tb.appendChild(tr);
 }
 function calcTemp(){
