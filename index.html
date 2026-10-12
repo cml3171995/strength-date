@@ -36,7 +36,7 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#4a90d9}
 </head>
 <body>
 <div class="card">
-<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-9</span></h1>
+<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-10</span></h1>
 <div class="sub">测温录入 → 自动算等效龄期 De → 录入各龄期强度 → 自动生成公式 → 预测强度</div>
 
 <div class="syncbox" style="background:#fff8e6;border-color:#e3cf8f">
@@ -124,7 +124,7 @@ function mkRow(t,v,forcedH){
   if(typeof t==='string'&&t&&t.indexOf('-')>=0)idt.value=t;
   i2.value=(v===null||v===undefined)?'':v;
   var h0=toHours(idt.value);
-  i1.value=isNaN(h0)?''+((forcedH!==undefined&&forcedH!==null)?forcedH:''):h0;
+  i1.value=isNaN(h0)?((forcedH!==undefined&&forcedH!==null)?forcedH:''):h0;
   var btn=document.createElement('button');btn.className='del';btn.type='button';btn.textContent='✕';
   btn.onclick=function(){if(tb.rows.length<=2)return;tr.parentNode.removeChild(tr);calcTemp()};
   td1.appendChild(idt);td2.appendChild(i1);td3.appendChild(i2);td4.appendChild(btn);
@@ -189,10 +189,6 @@ function calc(){
 }
 F.forEach(function(el){el.addEventListener('input',function(){fit();calc()})});
 de.addEventListener('input',function(){autoTag.textContent='（手动修改）';sl.value=de.value;calc()});
-pourEl.addEventListener('input',function(){
-  for(var i=1;i<tb.rows.length;i++){var idt=tb.rows[i].cells[0].firstChild;var h=toHours(idt.value);if(!isNaN(h))tb.rows[i].cells[1].firstChild.value=h}
-  calcTemp();
-});
 sl.addEventListener('input',function(){de.value=sl.value;autoTag.textContent='（手动修改）';calc()});
 // ===== 工程部位管理（多施工段/楼层） =====
 var gradeEl=document.getElementById('grade'),pourEl=document.getElementById('pour'),
@@ -241,6 +237,10 @@ function collectState(){
 partSel.addEventListener('change',function(){applyPart(partSel.value)});
 gradeEl.addEventListener('input',function(){saveAll()});
 pourEl.addEventListener('input',function(){saveAll()});
+pourEl.addEventListener('input',function(){
+  for(var i=1;i<tb.rows.length;i++){var idt=tb.rows[i].cells[0].firstChild;var h=toHours(idt.value);if(!isNaN(h))tb.rows[i].cells[1].firstChild.value=h}
+  calcTemp();
+});
 document.getElementById('partNew').onclick=function(){
   var ov=document.createElement('div');
   ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:999;display:flex;align-items:center;justify-content:center';
