@@ -36,7 +36,7 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#4a90d9}
 </head>
 <body>
 <div class="card">
-<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-5</span></h1>
+<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-7</span></h1>
 <div class="sub">测温录入 → 自动算等效龄期 De → 录入各龄期强度 → 自动生成公式 → 预测强度</div>
 
 <h2>① 测温数据录入</h2>
@@ -51,15 +51,12 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#4a90d9}
 <div class="syncbox">
 <div style="font-size:13px;font-weight:600;margin-bottom:6px">☁ 多人共享数据</div>
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-<button class="ghost" id="cpcode" type="button" style="flex:0 0 auto;padding:8px 12px">📋 复制共享码</button>
-<button class="ghost" id="imcode" type="button" style="flex:0 0 auto;padding:8px 12px">📥 导入共享码</button>
-<button class="ghost" id="mylink" type="button" style="flex:0 0 auto;padding:8px 12px;background:#1a7f4b;color:#fff">📌 一键保存（微信）</button>
 <button class="ghost" id="dl" type="button" style="flex:0 0 auto;padding:8px 12px">⬇ 下载记录（Excel）</button>
 <button class="ghost" id="cloudup" type="button" style="flex:0 0 auto;padding:8px 12px">☁ 更新（拉取最新数据）</button>
 </div>
-<div id="syncMsg" style="font-size:12px;color:#6b7280;margin-top:6px">已接入云端：录入后约 4 秒自动保存到云（看到“☁ 已自动保存”即可）；再次扫码打开自动恢复自己的数据；同事点【☁ 更新】即可拉取最新录入。共享码/下载功能仍保留作备用。</div>
+<div id="syncMsg" style="font-size:12px;color:#6b7280;margin-top:6px">已接入云端：录入后约 4 秒自动保存到云（看到“☁ 已自动保存”即可）；再次扫码打开自动恢复自己的数据；同事点【☁ 更新】即可拉取最新录入。数据存于云端，换手机也能恢复。</div>
 </div>
-<div class="sub" style="margin-top:8px"><b>微信保存/恢复方法</b>：录完点【📌 一键保存】→ 把复制的保存码发到微信“文件传输助手”；下次扫码打开应用，点【📥 导入共享码】，从文件传输助手复制保存码粘贴进来，数据即全部恢复。每次录完重新点一次保存并重发，替换旧消息。</div>
+<div class="sub" style="margin-top:8px"><b>云端自动同步已开启</b>：录入后自动保存；再次打开自动恢复；同事点【☁ 更新】即可拉取最新数据。无需任何手动操作。</div>
 <div class="debox">等效龄期 De = <span class="v" id="deOut">—</span> 天
 <span id="deH" style="font-size:12px;color:#6b7280"></span>
 <div class="err" id="tempErr"></div></div>
@@ -252,116 +249,12 @@ function gRestore(){
   });
 }
 document.addEventListener('input',function(){saveAll();gSave()});
-document.getElementById('cpcode').addEventListener('click',gSave);
+document.getElementById('dl').addEventListener('click',gSave);
 document.getElementById('dl').addEventListener('click',gSave);
 // ===== 多人共享（共享码/共享链接，无后端，随微信消息传输） =====
 var syncMsg=document.getElementById('syncMsg');
 function b64enc(s){return btoa(unescape(encodeURIComponent(s)))}
 function b64dec(s){return decodeURIComponent(escape(atob(s)))}
-function collect(){
-  var rows=[];
-  for(var i=1;i<tb.rows.length;i++){
-    rows.push([tb.rows[i].cells[0].firstChild.value,tb.rows[i].cells[1].firstChild.value]);
-  }
-  return {rows:rows,de:de.value,fs:F.map(function(el){return el.value}),ts:new Date().toLocaleString()};
-}
-function apply(d){
-  if(!d||!d.rows||!d.rows.length)return false;
-  while(tb.rows.length>1)tb.deleteRow(1);
-  d.rows.forEach(function(r){mkRow(r[0],r[1])});
-  if(d.fs)F.forEach(function(el,i){if(d.fs[i]!==undefined&&d.fs[i]!==null&&d.fs[i]!=='')el.value=d.fs[i]});
-  if(d.de)de.value=d.de;
-  fit();calcTemp();calc();saveAll();
-  return true;
-}
-function shareCode(){
-  var d=collect();
-  return 'QDPK1:'+b64enc(JSON.stringify(d));
-}
-function importCode(txt){
-  txt=(txt||'').trim();
-  var m=txt.match(/QDPK1:([A-Za-z0-9+/=]+)/);
-  if(!m){syncMsg.textContent='⚠ 未识别到有效共享码，请确认复制的是完整共享码';return false}
-  try{
-    var d=JSON.parse(b64dec(m[1]));
-    if(apply(d)){saveAll();syncMsg.textContent='✔ 已导入共享数据并保存（更新时间：'+(d.ts||'未知')+'）';return true}
-  }catch(e){}
-  syncMsg.textContent='⚠ 共享码不完整或已损坏，请重新复制';
-  return false;
-}
-document.getElementById('cpcode').onclick=function(){
-  var code=shareCode();
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(code).then(function(){syncMsg.textContent='✔ 共享码已复制，请发送到微信群；同事点“导入共享码”粘贴即可'},function(){fallbackCopy(code)});
-  }else fallbackCopy(code);
-};
-function fallbackCopy(code){
-  var ta=document.createElement('textarea');ta.value=code;document.body.appendChild(ta);ta.select();
-  try{document.execCommand('copy');syncMsg.textContent='✔ 共享码已复制，请发送到微信群'}catch(e){syncMsg.textContent='⚠ 复制失败，请手动选择文本复制'}
-  ta.remove();
-}
-function findFileId(){
-  var urls=[];
-  try{urls.push(location.href)}catch(e){}
-  try{urls.push(window.top.location.href)}catch(e){}
-  try{urls.push(window.parent.location.href)}catch(e){}
-  try{urls.push(document.referrer)}catch(e){}
-  for(var i=0;i<urls.length;i++){
-    var u=urls[i];if(!u)continue;
-    var m=u.match(/\/l\/([A-Za-z0-9]+)/)||u.match(/(?:file_?id|docid|fid|id)=([A-Za-z0-9]+)/i);
-    if(m&&m[1].length>=10)return m[1];
-    m=u.match(/[?&\/]([A-Za-z0-9]{11,12})(?:[\/?&#]|$)/);
-    if(m&&!/passport|kdocs|applet|weboffice/i.test(m[1]))return m[1];
-  }
-  return null;
-}
-document.getElementById('mylink').onclick=function(){
-  var code=shareCode();
-  var done=function(){syncMsg.textContent='✔ 已复制保存码！① 立即切到微信，粘贴发送到【文件传输助手】；② 下次扫码打开应用后，点【📥 导入共享码】，从文件传输助手复制粘贴进来，数据即全部恢复'};
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(done,function(){fallbackCopy(code)})}
-  else fallbackCopy(code);
-};
-document.getElementById('imcode').onclick=function(){
-  var ov=document.createElement('div');
-  ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:999;display:flex;align-items:center;justify-content:center';
-  var box=document.createElement('div');
-  box.style.cssText='background:#fff;border-radius:10px;padding:14px;width:92%;max-width:520px;box-sizing:border-box';
-  box.innerHTML='<div style="font-weight:bold;margin-bottom:6px">📥 导入共享码</div><div style="font-size:12px;color:#888;margin-bottom:6px">粘贴同事发来的共享码（QDPK1:开头的一长串字符）：</div>';
-  var ta=document.createElement('textarea');
-  ta.style.cssText='width:100%;height:110px;font-size:11px;border:1px solid #ccc;border-radius:6px;padding:6px;box-sizing:border-box';
-  var row=document.createElement('div');row.style.cssText='margin-top:8px;text-align:right';
-  var c1=document.createElement('button');c1.textContent='取消';
-  c1.style.cssText='padding:8px 16px;margin-right:8px;background:#eee;color:#333;border:none;border-radius:6px';
-  c1.onclick=function(){ov.remove()};
-  var c2=document.createElement('button');c2.textContent='导入';
-  c2.style.cssText='padding:8px 20px;background:#1e5bb5;color:#fff;border:none;border-radius:6px';
-  c2.onclick=function(){var t=ta.value;if(t)importCode(t);ov.remove()};
-  row.appendChild(c1);row.appendChild(c2);box.appendChild(ta);box.appendChild(row);ov.appendChild(box);document.body.appendChild(ov);
-  setTimeout(function(){ta.focus()},50);
-};
-// 打开时检测链接中的共享数据
-function readOuterHash(){
-  var hs=[];
-  try{hs.push(location.hash)}catch(e){}
-  try{if(window.top&&window.top!==window)hs.push(window.top.location.hash)}catch(e){}
-  try{if(window.parent&&window.parent!==window)hs.push(window.parent.location.hash)}catch(e){}
-  for(var i=0;i<hs.length;i++){
-    var m=hs[i].match(/#d=(QDPK1:[A-Za-z0-9+/=]+)/);
-    if(m)return m[1];
-  }
-  return null;
-}
-try{
-  var code0=readOuterHash();
-  if(code0){
-    setTimeout(function(){
-      if(importCode(decodeURIComponent(code0))){
-        try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
-        try{if(window.top&&window.top!==window&&window.top.location.replace)window.top.location.replace('https://www.kdocs.cn/l/chGzKbiAL3sN')}catch(e){}
-      }
-    },400);
-  }
-}catch(e){}
 // ===== 下载记录（导出 CSV，Excel 可直接打开） =====
 function getDetail(){
   var rows=tb.rows,pts=[];
