@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>青岛公司混凝土早期强度评估2.0</title>
+<title>青岛公司混凝土早期强度评估3.0</title>
 <style>
 body{font-family:'PingFang SC','Microsoft YaHei',Arial,sans-serif;background:#e8eef6;margin:0;padding:16px;color:#1A1B1C}
 .card{max-width:520px;margin:0 auto;background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,60,120,.10);border-top:6px solid #005BAC}
@@ -36,8 +36,8 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#005BAC}
 </head>
 <body>
 <div class="card">
-<img src="logo.png" alt="中建八局第四建设有限公司" style="height:42px;display:block;margin:0 auto 8px">
-<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-12</span></h1>
+<img src="logo.png" alt="中建八局第四建设有限公司" style="width:100%;height:auto;display:block;margin:0 0 6px">
+<h1>青岛公司混凝土早期强度评估3.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-13</span></h1>
 <div class="sub">测温录入 → 自动算等效龄期 De → 录入各龄期强度 → 自动生成公式 → 预测强度</div>
 
 <div class="syncbox" style="background:#fff8e6;border-color:#e3cf8f">
@@ -69,7 +69,7 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#005BAC}
 </div>
 <div id="syncMsg" style="font-size:12px;color:#6b7280;margin-top:6px">已接入云端：录入后约 4 秒自动保存到云（看到“☁ 已自动保存”即可）；再次扫码打开自动恢复自己的数据；同事点【☁ 更新】即可拉取最新录入。数据存于云端，换手机也能恢复。</div>
 </div>
-<div class="sub" style="margin-top:8px"><b>云端自动同步已开启</b>：录入后自动保存；再次打开自动恢复；同事点【☁ 更新】即可拉取最新数据。无需任何手动操作。</div>
+<div class="sub" style="margin-top:8px"><b>云端自动同步已开启</b>：录入后自动保存；同一设备再次打开自动恢复；其他端口进入需点【☁ 更新】即可拉取最新数据。</div>
 <div class="debox">等效龄期 De = <span class="v" id="deOut">—</span> 天
 <span id="deH" style="font-size:12px;color:#6b7280"></span>
 <div class="err" id="tempErr"></div></div>
@@ -373,7 +373,7 @@ function getDetail(){
 }
 document.getElementById('dl').onclick=function(){
   var d=getDetail(),L=[];
-  L.push(['青岛公司混凝土早期强度评估2.0 - 数据记录','导出时间',new Date().toLocaleString()]);
+  L.push(['青岛公司混凝土早期强度评估3.0 - 数据记录','导出时间',new Date().toLocaleString()]);
   L.push(['工程部位',curPart||'—','强度等级',gradeEl.value,'浇筑时间',pourEl.value]);
   L.push(['记录时间','养护时间(h)','实测温度(℃)']);
   var rowsx=tb.rows;
