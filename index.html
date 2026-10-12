@@ -36,7 +36,7 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#4a90d9}
 </head>
 <body>
 <div class="card">
-<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-8</span></h1>
+<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-9</span></h1>
 <div class="sub">测温录入 → 自动算等效龄期 De → 录入各龄期强度 → 自动生成公式 → 预测强度</div>
 
 <div class="syncbox" style="background:#fff8e6;border-color:#e3cf8f">
@@ -47,16 +47,16 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#4a90d9}
 </div>
 <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
 <input id="grade" class="ok" placeholder="强度等级 如C30" style="flex:1;min-width:120px;text-align:left">
-<input id="pour" class="ok" placeholder="浇筑时间 如2026-11-15 08:00" style="flex:1;min-width:150px;text-align:left">
+<input id="pour" class="ok" type="datetime-local" style="flex:1;min-width:170px;text-align:left">
 </div>
 </div>
 
 <h2>① 测温数据录入</h2>
-<div class="sub">输入养护时间(h)与实测温度(℃)，按相邻两次测温的平均温度取整后查等效系数计算 De；时间需按先后顺序递增。</div>
+<div class="sub">先在上方选择浇筑时间，然后逐条用日历选择每次测温的记录时间，养护时间(h)自动计算（记录时间−浇筑时间），实测温度手工填写；按相邻两次测温的平均温度自动查等效系数计算 De。</div>
 <div class="note2" style="font-size:12px;color:#c0392b;background:#fdecea;border-radius:8px;padding:6px 10px;margin-bottom:8px;line-height:1.6">备注：在达到受冻临界强度之前应每隔<b style="color:#c0392b">4h～6h</b>测量一次混凝土温度；混凝土在达到受冻临界强度后，可适当放宽至每<b style="color:#c0392b">12~24h</b>测量一次。</div>
 <div class="legend">🟡 黄色底输入框 = 需手动录入</div>
 <table id="ttemp">
-<tr><th style="width:34%">养护时间(h)</th><th style="width:34%">实测温度(℃)</th><th></th></tr>
+<tr><th style="width:44%">记录时间（日历选择）</th><th style="width:19%">养护时间(h)</th><th style="width:22%">实测温度(℃)</th><th></th></tr>
 </table>
 <button class="ghost" id="addRow" type="button">＋ 新增一行</button>
 <button class="ghost" id="clearAll" type="button" style="margin-left:8px">🗑 清空本次记录</button>
@@ -107,24 +107,38 @@ var tb=document.getElementById('ttemp'),addBtn=document.getElementById('addRow')
     fbox=document.getElementById('fbox'),err=document.getElementById('err'),autoTag=document.getElementById('autoTag');
 var F=['f1','f2','f3','f7','f28'].map(function(id){return document.getElementById(id)});
 var T=[1,2,3,7,28], A=NaN,B=NaN;
-function mkRow(t,v){
+function toHours(dtStr){
+  if(!dtStr||!pourEl.value)return NaN;
+  var a=new Date(dtStr),b=new Date(pourEl.value);
+  if(isNaN(a)||isNaN(b))return NaN;
+  var h=(a-b)/3600000;if(h<0)h=0;
+  return Math.round(h*2)/2;
+}
+function mkRow(t,v,forcedH){
   var tr=document.createElement('tr');
-  var td1=document.createElement('td'),td2=document.createElement('td'),td3=document.createElement('td');
-  var i1=document.createElement('input'),i2=document.createElement('input');
-  i1.type='number';i2.type='number';i1.step='0.5';i2.step='0.1';i2.inputmode='decimal';i1.inputmode='decimal';
-  i1.value=(t===null?'':t);i2.value=(v===null?'':v);
+  var td1=document.createElement('td'),td2=document.createElement('td'),td3=document.createElement('td'),td4=document.createElement('td');
+  var idt=document.createElement('input'),i1=document.createElement('input'),i2=document.createElement('input');
+  idt.type='datetime-local';
+  i1.type='number';i2.type='number';i2.step='0.1';i2.inputmode='decimal';
+  i1.readOnly=true;i1.style.background='#eef2f6';i1.style.border='1px solid #cfd8e3';
+  if(typeof t==='string'&&t&&t.indexOf('-')>=0)idt.value=t;
+  i2.value=(v===null||v===undefined)?'':v;
+  var h0=toHours(idt.value);
+  i1.value=isNaN(h0)?''+((forcedH!==undefined&&forcedH!==null)?forcedH:''):h0;
   var btn=document.createElement('button');btn.className='del';btn.type='button';btn.textContent='✕';
   btn.onclick=function(){if(tb.rows.length<=2)return;tr.parentNode.removeChild(tr);calcTemp()};
-  td1.appendChild(i1);td2.appendChild(i2);td3.appendChild(btn);
-  tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);
-  i1.addEventListener('input',calcTemp);i2.addEventListener('input',calcTemp);
+  td1.appendChild(idt);td2.appendChild(i1);td3.appendChild(i2);td4.appendChild(btn);
+  tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
+  idt.addEventListener('input',calcTemp);i2.addEventListener('input',calcTemp);
   tb.appendChild(tr);
 }
 function calcTemp(){
   var rows=tb.rows,pts=[];
   for(var i=1;i<rows.length;i++){
-    var a=parseFloat(rows[i].cells[0].firstChild.value),
-        b=parseFloat(rows[i].cells[1].firstChild.value);
+    var idt=rows[i].cells[0].firstChild;
+    var a=toHours(idt.value);
+    if(isNaN(a))a=parseFloat(rows[i].cells[1].firstChild.value); // 旧数据：第2列直接是小时
+    var b=parseFloat(rows[i].cells[2].firstChild.value);
     if(!isNaN(a)&&!isNaN(b))pts.push([a,b]);
   }
   if(pts.length<2){deOut.textContent='—';deH.textContent='';tempErr.style.display='none';return}
@@ -175,6 +189,10 @@ function calc(){
 }
 F.forEach(function(el){el.addEventListener('input',function(){fit();calc()})});
 de.addEventListener('input',function(){autoTag.textContent='（手动修改）';sl.value=de.value;calc()});
+pourEl.addEventListener('input',function(){
+  for(var i=1;i<tb.rows.length;i++){var idt=tb.rows[i].cells[0].firstChild;var h=toHours(idt.value);if(!isNaN(h))tb.rows[i].cells[1].firstChild.value=h}
+  calcTemp();
+});
 sl.addEventListener('input',function(){de.value=sl.value;autoTag.textContent='（手动修改）';calc()});
 // ===== 工程部位管理（多施工段/楼层） =====
 var gradeEl=document.getElementById('grade'),pourEl=document.getElementById('pour'),
@@ -199,7 +217,11 @@ function applyPart(name){
   for(var i=tb.rows.length-1;i>0;i--)tb.deleteRow(i);
   var p=parts[curPart];
   if(p&&p.d&&p.d.rows&&p.d.rows.length){
-    p.d.rows.forEach(function(r){mkRow(r[0],r[1])});
+    p.d.rows.forEach(function(r){
+      var t=r[0];
+      if(typeof t==='string'&&t.indexOf('-')>=0)mkRow(t,r[1]);
+      else mkRow(null,r[1],parseFloat(t));
+    });
     F.forEach(function(el){el.value=''});
     if(p.d.fs)F.forEach(function(el,i){if(p.d.fs[i])el.value=p.d.fs[i]});
     if(p.d.de)de.value=p.d.de;
@@ -227,7 +249,7 @@ document.getElementById('partNew').onclick=function(){
   box.innerHTML='<div style="font-weight:bold;margin-bottom:8px">🏗 新建工程部位</div>'
    +'<input id="npName" placeholder="部位名称，如：1#楼3层墙柱" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">'
    +'<input id="npGrade" placeholder="强度等级，如 C30" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">'
-   +'<input id="npPour" placeholder="浇筑时间，如 2026-11-15 08:00" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">';
+   +'<input id="npPour" type="datetime-local" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">';
   var row=document.createElement('div');row.style.cssText='margin-top:4px;text-align:right';
   var c1=document.createElement('button');c1.className='ghost';c1.textContent='取消';
   c1.style.cssText='margin-right:8px';c1.onclick=function(){ov.remove()};
@@ -302,10 +324,16 @@ function gSave(){
 function gApply(rec){
   if(!rec||!rec.d||!rec.d.rows||!rec.d.rows.length)return false;
   for(var i=tb.rows.length-1;i>0;i--)tb.deleteRow(i);
-  rec.d.rows.forEach(function(r){mkRow(r[0],r[1])});
+  rec.d.rows.forEach(function(r){
+    var t=r[0];
+    if(typeof t==='string'&&t.indexOf('-')>=0)mkRow(t,r[1]);
+    else mkRow(null,r[1],parseFloat(t));
+  });
   F.forEach(function(el){el.value=''});
   if(rec.d.fs)F.forEach(function(el,i){if(rec.d.fs[i]!==undefined&&rec.d.fs[i]!==null&&rec.d.fs[i]!=='')el.value=rec.d.fs[i]});
   if(rec.d.de)de.value=rec.d.de;
+  if(rec.pour)pourEl.value=rec.pour;
+  if(rec.grade)gradeEl.value=rec.grade;
   fit();calcTemp();calc();saveAll();
   return true;
 }
@@ -346,8 +374,9 @@ document.getElementById('dl').onclick=function(){
   var d=getDetail(),L=[];
   L.push(['青岛公司混凝土早期强度评估2.0 - 数据记录','导出时间',new Date().toLocaleString()]);
   L.push(['工程部位',curPart||'—','强度等级',gradeEl.value,'浇筑时间',pourEl.value]);
-  L.push(['养护时间(h)','实测温度(℃)']);
-  d.pts.forEach(function(p){L.push([p[0],p[1]])});
+  L.push(['记录时间','养护时间(h)','实测温度(℃)']);
+  var rowsx=tb.rows;
+  for(var ri=1;ri<rowsx.length;ri++){var idtx=rowsx[ri].cells[0].firstChild;if(idtx.value)L.push([idtx.value,rowsx[ri].cells[1].firstChild.value,rowsx[ri].cells[2].firstChild.value])}
   L.push(['等效龄期De(天)',(d.sum/24).toFixed(2)]);
   L.push(['预测强度f(MPa)',out.textContent]);
   var csv='\ufeff'+L.map(function(r){return r.join('\t')}).join('\r\n');
