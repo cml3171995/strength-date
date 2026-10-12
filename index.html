@@ -36,8 +36,20 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#4a90d9}
 </head>
 <body>
 <div class="card">
-<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-7</span></h1>
+<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-8</span></h1>
 <div class="sub">测温录入 → 自动算等效龄期 De → 录入各龄期强度 → 自动生成公式 → 预测强度</div>
+
+<div class="syncbox" style="background:#fff8e6;border-color:#e3cf8f">
+<div style="font-size:13px;font-weight:600;margin-bottom:6px">🏗 工程部位（不同施工段/楼层分别记录）</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<select id="partSel" style="flex:1;min-width:150px;padding:8px;font-size:15px;border:1px solid #d9b44a;border-radius:8px;background:#fff8e1"></select>
+<button class="ghost" id="partNew" type="button" style="padding:8px 12px">＋ 新建部位</button>
+</div>
+<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+<input id="grade" class="ok" placeholder="强度等级 如C30" style="flex:1;min-width:120px;text-align:left">
+<input id="pour" class="ok" placeholder="浇筑时间 如2026-11-15 08:00" style="flex:1;min-width:150px;text-align:left">
+</div>
+</div>
 
 <h2>① 测温数据录入</h2>
 <div class="sub">输入养护时间(h)与实测温度(℃)，按相邻两次测温的平均温度取整后查等效系数计算 De；时间需按先后顺序递增。</div>
@@ -134,7 +146,6 @@ function calcTemp(){
 }
 addBtn.onclick=function(){mkRow(null,null)};
 document.getElementById('clearAll').onclick=function(){
-  try{localStorage.removeItem(KEY)}catch(e){}
   while(tb.rows.length>1)tb.deleteRow(1);
   mkRow(0,20);mkRow(24,20);
   F.forEach(function(el){el.value=''});
@@ -165,6 +176,71 @@ function calc(){
 F.forEach(function(el){el.addEventListener('input',function(){fit();calc()})});
 de.addEventListener('input',function(){autoTag.textContent='（手动修改）';sl.value=de.value;calc()});
 sl.addEventListener('input',function(){de.value=sl.value;autoTag.textContent='（手动修改）';calc()});
+// ===== 工程部位管理（多施工段/楼层） =====
+var gradeEl=document.getElementById('grade'),pourEl=document.getElementById('pour'),
+    partSel=document.getElementById('partSel');
+var parts={};   // name -> {grade,pour,d,ts,num}
+var curPart='';
+try{parts=JSON.parse(localStorage.getItem('qdpk_parts')||'{}')}catch(e){}
+function saveParts(){try{localStorage.setItem('qdpk_parts',JSON.stringify(parts))}catch(e){}}
+function refreshSel(){
+  partSel.innerHTML='';
+  var op=document.createElement('option');op.value='';op.textContent='— 请选择或新建部位 —';
+  partSel.appendChild(op);
+  Object.keys(parts).sort().forEach(function(n){
+    var o=document.createElement('option');o.value=n;o.textContent=n+(parts[n].grade?'（'+parts[n].grade+'）':'');
+    partSel.appendChild(o);
+  });
+  partSel.value=curPart||'';
+}
+function applyPart(name){
+  curPart=name||'';
+  try{localStorage.setItem('qdpk_curpart',curPart)}catch(e){}
+  for(var i=tb.rows.length-1;i>0;i--)tb.deleteRow(i);
+  var p=parts[curPart];
+  if(p&&p.d&&p.d.rows&&p.d.rows.length){
+    p.d.rows.forEach(function(r){mkRow(r[0],r[1])});
+    F.forEach(function(el){el.value=''});
+    if(p.d.fs)F.forEach(function(el,i){if(p.d.fs[i])el.value=p.d.fs[i]});
+    if(p.d.de)de.value=p.d.de;
+    gradeEl.value=p.grade||'';pourEl.value=p.pour||'';
+  }else{
+    mkRow(0,20);mkRow(24,20);
+    F.forEach(function(el){el.value=''});
+    gradeEl.value=(p&&p.grade)||'';pourEl.value=(p&&p.pour)||'';
+  }
+  refreshSel();fit();calcTemp();calc();saveAll();
+}
+function collectState(){
+  var rows=[];
+  for(var i=1;i<tb.rows.length;i++)rows.push([tb.rows[i].cells[0].firstChild.value,tb.rows[i].cells[1].firstChild.value]);
+  return {rows:rows,de:de.value,fs:F.map(function(el){return el.value})};
+}
+partSel.addEventListener('change',function(){applyPart(partSel.value)});
+gradeEl.addEventListener('input',function(){saveAll()});
+pourEl.addEventListener('input',function(){saveAll()});
+document.getElementById('partNew').onclick=function(){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:999;display:flex;align-items:center;justify-content:center';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fff;border-radius:10px;padding:14px;width:92%;max-width:520px;box-sizing:border-box';
+  box.innerHTML='<div style="font-weight:bold;margin-bottom:8px">🏗 新建工程部位</div>'
+   +'<input id="npName" placeholder="部位名称，如：1#楼3层墙柱" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">'
+   +'<input id="npGrade" placeholder="强度等级，如 C30" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">'
+   +'<input id="npPour" placeholder="浇筑时间，如 2026-11-15 08:00" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">';
+  var row=document.createElement('div');row.style.cssText='margin-top:4px;text-align:right';
+  var c1=document.createElement('button');c1.className='ghost';c1.textContent='取消';
+  c1.style.cssText='margin-right:8px';c1.onclick=function(){ov.remove()};
+  var c2=document.createElement('button');c2.textContent='创建并录入';
+  c2.onclick=function(){
+    var n=document.getElementById('npName').value.trim();
+    if(!n){document.getElementById('npName').style.border='1px solid #d00';return}
+    parts[n]={grade:document.getElementById('npGrade').value.trim(),pour:document.getElementById('npPour').value.trim(),d:null,ts:new Date().toLocaleString(),num:Date.now()};
+    saveParts();ov.remove();applyPart(n);gSave();
+  };
+  row.appendChild(c1);row.appendChild(c2);box.appendChild(row);ov.appendChild(box);document.body.appendChild(ov);
+  setTimeout(function(){document.getElementById('npName').focus()},60);
+};
 // ===== 自动记录上次录入（localStorage） =====
 var KEY='qdpk_strength_v2';
 function saveAll(){
@@ -175,19 +251,12 @@ function saveAll(){
     }
     var d={rows:rows,de:de.value,fs:F.map(function(el){return el.value})};
     localStorage.setItem(KEY,JSON.stringify(d));
-  }catch(e){}
-}
-function loadAll(){
-  try{
-    var d=JSON.parse(localStorage.getItem(KEY));
-    if(d&&d.rows&&d.rows.length){
-      d.rows.forEach(function(r){mkRow(r[0],r[1])});
-      if(d.fs)F.forEach(function(el,i){if(d.fs[i]!==undefined&&d.fs[i]!==null&&d.fs[i]!=='')el.value=d.fs[i]});
-      if(d.de)de.value=d.de;
-      return true;
+    if(curPart){
+      var p=parts[curPart]||(parts[curPart]={});
+      p.grade=gradeEl.value;p.pour=pourEl.value;p.d=d;p.ts=new Date().toLocaleString();p.num=Date.now();
+      saveParts();
     }
   }catch(e){}
-  return false;
 }
 document.addEventListener('input',function(){saveAll()});
 // ===== 云端保存（Gitee 仓库存 JSON） =====
@@ -214,10 +283,10 @@ function gSave(){
     gBusy=true;
     gGet(function(err,o,sha){
       if(err||!o){gBusy=false;return}
-      o.records=(o.records||[]).filter(function(r){return r.cid!==CID});
-      var d={rows:[],de:de.value,fs:F.map(function(el){return el.value})};
-      for(var i=1;i<tb.rows.length;i++)d.rows.push([tb.rows[i].cells[0].firstChild.value,tb.rows[i].cells[1].firstChild.value]);
-      o.records.push({cid:CID,num:Date.now(),ts:new Date().toLocaleString(),d:d});
+      if(!curPart){gBusy=false;return}
+      o.records=(o.records||[]).filter(function(r){return r.name!==curPart});
+      var p=parts[curPart]||{};
+      o.records.push({name:curPart,grade:gradeEl.value,pour:pourEl.value,cid:CID,num:Date.now(),ts:new Date().toLocaleString(),d:p.d||collectState()});
       var body={message:'save '+Date.now(),content:b64s(JSON.stringify(o)),sha:sha};
       var x=new XMLHttpRequest();
       x.open('PUT',GHURL);
@@ -244,17 +313,19 @@ function gRestore(){
   gGet(function(err,o){
     if(err||!o)return;
     var recs=(o.records||[]);
-    var rec=null;for(var i=0;i<recs.length;i++){if(recs[i].cid===CID)rec=recs[i]}
-    if(rec&&gApply(rec))syncMsg.textContent='☁ 已自动恢复云端数据（保存于 '+rec.ts+'）';
+    recs.forEach(function(r){
+      if(!r.name)return;
+      var lp=parts[r.name];
+      if(!lp||(r.num||0)>=(lp.num||0)){parts[r.name]={grade:r.grade||'',pour:r.pour||'',d:r.d,ts:r.ts,num:r.num||0}}
+    });
+    saveParts();refreshSel();
+    var rec=null;for(var i=0;i<recs.length;i++){if(recs[i].name===curPart)rec=recs[i]}
+    if(rec&&gApply(rec)){syncMsg.textContent='☁ 已自动恢复【'+curPart+'】云端数据（保存于 '+rec.ts+'）';saveParts()}
   });
 }
 document.addEventListener('input',function(){saveAll();gSave()});
 document.getElementById('dl').addEventListener('click',gSave);
-document.getElementById('dl').addEventListener('click',gSave);
-// ===== 多人共享（共享码/共享链接，无后端，随微信消息传输） =====
 var syncMsg=document.getElementById('syncMsg');
-function b64enc(s){return btoa(unescape(encodeURIComponent(s)))}
-function b64dec(s){return decodeURIComponent(escape(atob(s)))}
 // ===== 下载记录（导出 CSV，Excel 可直接打开） =====
 function getDetail(){
   var rows=tb.rows,pts=[];
@@ -274,12 +345,13 @@ function getDetail(){
 document.getElementById('dl').onclick=function(){
   var d=getDetail(),L=[];
   L.push(['青岛公司混凝土早期强度评估2.0 - 数据记录','导出时间',new Date().toLocaleString()]);
+  L.push(['工程部位',curPart||'—','强度等级',gradeEl.value,'浇筑时间',pourEl.value]);
   L.push(['养护时间(h)','实测温度(℃)']);
   d.pts.forEach(function(p){L.push([p[0],p[1]])});
   L.push(['等效龄期De(天)',(d.sum/24).toFixed(2)]);
   L.push(['预测强度f(MPa)',out.textContent]);
   var csv='\ufeff'+L.map(function(r){return r.join('\t')}).join('\r\n');
-  var fname='混凝土早期强度评估记录_'+new Date().toISOString().slice(0,10)+'.csv';
+  var fname='强度评估_'+(curPart||'记录')+'_'+new Date().toISOString().slice(0,10)+'.csv';
   var inWx=/MicroMessenger/i.test(navigator.userAgent),inIfr=false;
   try{inIfr=window.top!==window.self}catch(e){inIfr=true}
   if(!inWx&&!inIfr){
@@ -313,14 +385,21 @@ document.getElementById('cloudup').onclick=function(){
   syncMsg.textContent='☁ 正在拉取云端数据…';
   gGet(function(err,o){
     if(err||!o){syncMsg.textContent='⚠ 云端拉取失败，请检查网络后重试';return}
-    var recs=(o.records||[]);if(!recs.length){syncMsg.textContent='☁ 云端暂无任何记录';return}
-    var best=recs[0];for(var i=1;i<recs.length;i++){if((recs[i].num||0)>(best.num||0))best=recs[i]}
-    if(gApply(best))syncMsg.textContent='☁ 已载入云端最新数据（'+(best.cid===CID?'自己的':'其他设备/同事的')+'，保存于 '+best.ts+'），如需保留请重新点“复制共享码”保存到本地';
+    var recs=(o.records||[]).filter(function(r){return r.name});
+    if(!recs.length){syncMsg.textContent='☁ 云端暂无任何记录';return}
+    recs.forEach(function(r){
+      var lp=parts[r.name];
+      if(!lp||(r.num||0)>=(lp.num||0)){parts[r.name]={grade:r.grade||'',pour:r.pour||'',d:r.d,ts:r.ts,num:r.num||0}}
+    });
+    saveParts();refreshSel();
+    var best=null;for(var i=0;i<recs.length;i++){if(recs[i].name===curPart&&(!best||(recs[i].num||0)>(best.num||0)))best=recs[i]}
+    if(best&&gApply(best))saveParts();
+    syncMsg.textContent='☁ 已更新，云端共 '+recs.length+' 个部位：'+recs.map(function(r){return r.name}).join('、')+'（当前：'+(curPart||'未选择')+'）';
   });
 };
-// 初始：优先恢复上次录入（本地），再从云端拉取自己的记录
-if(!loadAll()){mkRow(0,20);mkRow(24,20);}
-fit();calcTemp();calc();
+// 初始：恢复上次使用的部位；无部位则显示示例行
+try{curPart=localStorage.getItem('qdpk_curpart')||''}catch(e){}
+applyPart(curPart);
 gRestore();
 </script>
 </body>
