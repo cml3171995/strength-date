@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>青岛公司混凝土早期强度评估2.0</title>
+<style>
+body{font-family:'PingFang SC','Microsoft YaHei',Arial,sans-serif;background:#f0f4f8;margin:0;padding:16px;color:#1A1B1C}
+.card{max-width:520px;margin:0 auto;background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+h1{font-size:23px;margin:0 0 4px;color:#1a5fb4}
+h2{font-size:14px;margin:18px 0 6px}
+.sub{font-size:12px;color:#6b7280;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+th{font-size:12px;color:#6b7280;font-weight:400;padding:4px}
+td{padding:3px}
+input{width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #d9b44a;border-radius:8px;text-align:center;background:#fff8e1}
+.legend{font-size:12px;color:#8a6d1a;background:#fff3cd;border-radius:8px;padding:6px 10px;margin-bottom:6px}
+input.ok{border-color:#9fc6e8;background:#fff8e1}
+button{padding:10px 14px;font-size:14px;border:none;border-radius:10px;background:#4a90d9;color:#fff}
+button.ghost{background:#eef2f6;color:#1A1B1C}
+.del{background:none;color:#c00;font-size:16px;padding:4px 8px}
+.fbox{background:#eaf3fb;border-radius:12px;padding:12px;font-size:14px;line-height:1.7}
+.fbox b{font-size:15px}
+.debox{background:#e7f6ec;border-radius:12px;padding:12px;margin-top:10px}
+.debox .v{font-size:22px;font-weight:700}
+.err{color:#d9534f;font-size:12px;margin-top:6px;display:none}
+label{font-size:14px;display:block;margin:14px 0 6px}
+.note{font-size:11px;color:#6b7280;margin-top:14px;line-height:1.5}
+.res{margin-top:12px;background:#fff8e6;border-radius:12px;padding:12px}
+.res .lab{font-size:12px;color:#6b7280}
+.res .val{font-size:30px;font-weight:700;margin-top:2px}
+input[type=range]{width:100%;margin-top:10px;accent-color:#4a90d9}
+.auto{font-size:12px;color:#2e7d32;margin-left:6px}
+.syncbox{margin-top:12px;background:#f0f4ff;border:1px solid #c9d6f0;border-radius:12px;padding:12px;box-sizing:border-box}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>青岛公司混凝土早期强度评估2.0 <span style="font-size:12px;color:#999;font-weight:normal">v1012-6</span></h1>
+<div class="sub">测温录入 → 自动算等效龄期 De → 录入各龄期强度 → 自动生成公式 → 预测强度</div>
+
+<h2>① 测温数据录入</h2>
+<div class="sub">输入养护时间(h)与实测温度(℃)，按相邻两次测温的平均温度取整后查等效系数计算 De；时间需按先后顺序递增。</div>
+<div class="note2" style="font-size:12px;color:#c0392b;background:#fdecea;border-radius:8px;padding:6px 10px;margin-bottom:8px;line-height:1.6">备注：在达到受冻临界强度之前应每隔<b style="color:#c0392b">4h～6h</b>测量一次混凝土温度；混凝土在达到受冻临界强度后，可适当放宽至每<b style="color:#c0392b">12~24h</b>测量一次。</div>
+<div class="legend">🟡 黄色底输入框 = 需手动录入</div>
+<table id="ttemp">
+<tr><th style="width:34%">养护时间(h)</th><th style="width:34%">实测温度(℃)</th><th></th></tr>
+</table>
+<button class="ghost" id="addRow" type="button">＋ 新增一行</button>
+<button class="ghost" id="clearAll" type="button" style="margin-left:8px">🗑 清空本次记录</button>
+<div class="syncbox">
+<div style="font-size:13px;font-weight:600;margin-bottom:6px">☁ 多人共享数据</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+<button class="ghost" id="cpcode" type="button" style="flex:0 0 auto;padding:8px 12px">📋 复制共享码</button>
+<button class="ghost" id="imcode" type="button" style="flex:0 0 auto;padding:8px 12px">📥 导入共享码</button>
+<button class="ghost" id="mylink" type="button" style="flex:0 0 auto;padding:8px 12px;background:#1a7f4b;color:#fff">📌 一键保存（微信）</button>
+<button class="ghost" id="dl" type="button" style="flex:0 0 auto;padding:8px 12px">⬇ 下载记录（Excel）</button>
+<button class="ghost" id="cloudup" type="button" style="flex:0 0 auto;padding:8px 12px">☁ 更新（拉取最新数据）</button>
+</div>
+<div id="syncMsg" style="font-size:12px;color:#6b7280;margin-top:6px">已接入云端：录入后约 4 秒自动保存到云（看到“☁ 已自动保存”即可）；再次扫码打开自动恢复自己的数据；同事点【☁ 更新】即可拉取最新录入。共享码/下载功能仍保留作备用。</div>
+</div>
+<div class="sub" style="margin-top:8px"><b>微信保存/恢复方法</b>：录完点【📌 一键保存】→ 把复制的保存码发到微信“文件传输助手”；下次扫码打开应用，点【📥 导入共享码】，从文件传输助手复制保存码粘贴进来，数据即全部恢复。每次录完重新点一次保存并重发，替换旧消息。</div>
+<div class="debox">等效龄期 De = <span class="v" id="deOut">—</span> 天
+<span id="deH" style="font-size:12px;color:#6b7280"></span>
+<div class="err" id="tempErr"></div></div>
+
+<h2>② 各龄期试块强度录入（商混站提供）</h2>
+<table>
+<tr><th>龄期(d)</th><th>强度(MPa)</th></tr>
+<tr><td>1</td><td><input id="f1" type="number" step="0.1" min="0" inputmode="decimal" value="4"></td></tr>
+<tr><td>2</td><td><input id="f2" type="number" step="0.1" min="0" inputmode="decimal" value="11"></td></tr>
+<tr><td>3</td><td><input id="f3" type="number" step="0.1" min="0" inputmode="decimal" value="15.4"></td></tr>
+<tr><td>7</td><td><input id="f7" type="number" step="0.1" min="0" inputmode="decimal" value="21.8"></td></tr>
+<tr><td>28</td><td><input id="f28" type="number" step="0.1" min="0" inputmode="decimal" placeholder="选填"></td></tr>
+</table>
+<div class="fbox" id="fbox">公式生成中…</div>
+<div class="err" id="err">⚠ 至少需要 2 个有效数据点（强度均大于0），才能生成公式。</div>
+
+<label>③ 等效龄期 De（天）<span class="auto" id="autoTag">（已自动取自①，也可手动修改）</span></label>
+<input id="de" type="number" min="0.1" max="600" step="0.01" value="3.11" inputmode="decimal">
+<input id="sl" type="range" min="0.1" max="30" step="0.01" value="3.11">
+<div class="res">
+<div class="lab">预测强度 f（MPa）</div>
+<div class="val" id="out">—</div>
+</div>
+
+<div class="note">本程序适用于预估混凝土强度标准值 60% 以内的强度值，结果为估算值，不能替代试块实测强度。</div>
+</div>
+<script>
+// 等效龄期系数表（-15℃~50℃，来自《等效龄期系数》）
+var K={"-15":.06,"-14":.07,"-13":.08,"-12":.08,"-11":.1,"-10":.11,"-9":.12,"-8":.13,"-7":.15,"-6":.17,"-5":.18,"-4":.2,"-3":.22,"-2":.24,"-1":.26,"0":.28,"1":.31,"2":.33,"3":.35,"4":.39,"5":.42,"6":.45,"7":.48,"8":.51,"9":.55,"10":.58,"11":.62,"12":.66,"13":.7,"14":.74,"15":.77,"16":.81,"17":.86,"18":.9,"19":.95,"20":1,"21":1.05,"22":1.1,"23":1.15,"24":1.2,"25":1.25,"26":1.3,"27":1.36,"28":1.41,"29":1.47,"30":.53,"31":1.59,"32":1.66,"33":1.72,"34":1.77,"35":1.84,"36":1.92,"37":1.98,"38":2.04,"39":2.12,"40":2.19,"41":2.25,"42":2.32,"43":2.4,"44":2.48,"45":2.55,"46":2.63,"47":2.71,"48":2.78,"49":2.87,"50":2.95};
+// 修正: 30℃ 应为1.53
+K["30"]=1.53;
+function alpha(c){c=(c>=0?1:-1)*Math.round(Math.abs(c));if(c>50)c=50;if(c<-15)c=-15;return K[String(c)]}
+var tb=document.getElementById('ttemp'),addBtn=document.getElementById('addRow'),
+    deOut=document.getElementById('deOut'),deH=document.getElementById('deH'),tempErr=document.getElementById('tempErr'),
+    de=document.getElementById('de'),sl=document.getElementById('sl'),out=document.getElementById('out'),
+    fbox=document.getElementById('fbox'),err=document.getElementById('err'),autoTag=document.getElementById('autoTag');
+var F=['f1','f2','f3','f7','f28'].map(function(id){return document.getElementById(id)});
+var T=[1,2,3,7,28], A=NaN,B=NaN;
+function mkRow(t,v){
+  var tr=document.createElement('tr');
+  var td1=document.createElement('td'),td2=document.createElement('td'),td3=document.createElement('td');
+  var i1=document.createElement('input'),i2=document.createElement('input');
+  i1.type='number';i2.type='number';i1.step='0.5';i2.step='0.1';i2.inputmode='decimal';i1.inputmode='decimal';
+  i1.value=(t===null?'':t);i2.value=(v===null?'':v);
+  var btn=document.createElement('button');btn.className='del';btn.type='button';btn.textContent='✕';
+  btn.onclick=function(){if(tb.rows.length<=2)return;tr.parentNode.removeChild(tr);calcTemp()};
+  td1.appendChild(i1);td2.appendChild(i2);td3.appendChild(btn);
+  tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);
+  i1.addEventListener('input',calcTemp);i2.addEventListener('input',calcTemp);
+  tb.appendChild(tr);
+}
+function calcTemp(){
+  var rows=tb.rows,pts=[];
+  for(var i=1;i<rows.length;i++){
+    var a=parseFloat(rows[i].cells[0].firstChild.value),
+        b=parseFloat(rows[i].cells[1].firstChild.value);
+    if(!isNaN(a)&&!isNaN(b))pts.push([a,b]);
+  }
+  if(pts.length<2){deOut.textContent='—';deH.textContent='';tempErr.style.display='none';return}
+  pts.sort(function(p,q){return p[0]-q[0]});
+  for(var j=1;j<pts.length;j++){
+    if(pts[j][0]<=pts[j-1][0]){tempErr.textContent='⚠ 养护时间需严格递增（第'+(j+1)+'条与第'+j+'条重复或倒序）';tempErr.style.display='block';deOut.textContent='—';return}
+  }
+  tempErr.style.display='none';
+  var sum=0;
+  for(var k=1;k<pts.length;k++){
+    var dt=pts[k][0]-pts[k-1][0];
+    var c=(pts[k-1][1]/2+pts[k][1]/2);
+    sum+=dt*alpha(c);
+  }
+  deOut.textContent=(sum/24).toFixed(2);
+  deH.textContent='（累计 '+sum.toFixed(1)+' h）';
+  de.value=(sum/24).toFixed(2);sl.value=Math.min(Math.max(sum/24,0.1),30);
+  calc();
+}
+addBtn.onclick=function(){mkRow(null,null)};
+document.getElementById('clearAll').onclick=function(){
+  try{localStorage.removeItem(KEY)}catch(e){}
+  while(tb.rows.length>1)tb.deleteRow(1);
+  mkRow(0,20);mkRow(24,20);
+  F.forEach(function(el){el.value=''});
+  fit();calcTemp();calc();saveAll();
+};
+function fit(){
+  var xs=[],ys=[];
+  for(var i=0;i<5;i++){
+    var v=parseFloat(F[i].value);
+    if(!isNaN(v)&&v>0){xs.push(-1/T[i]);ys.push(Math.log(v))}
+  }
+  F.forEach(function(el){el.className=(parseFloat(el.value)>0)?'ok':''});
+  if(xs.length<2){A=NaN;B=NaN;err.style.display='block';fbox.textContent='等待有效数据…';return}
+  err.style.display='none';
+  var n=xs.length,sx=0,sy=0,sxx=0,sxy=0;
+  for(var j=0;j<n;j++){sx+=xs[j];sy+=ys[j];sxx+=xs[j]*xs[j];sxy+=xs[j]*ys[j]}
+  var m=(n*sxy-sx*sy)/(n*sxx-sx*sx),c=(sy-m*sx)/n;
+  A=Math.exp(c);B=m;
+  fbox.innerHTML='f = <b>'+A.toFixed(2)+'</b> × e<sup>−<b>'+B.toFixed(3)+'/D</b></sup><br>'+
+    '<span style="font-size:12px;color:#6b7280">（基于 '+n+' 个实测点回归）</span>';
+}
+function calc(){
+  var v=parseFloat(de.value);
+  if(isNaN(A)||isNaN(v)||v<=0){out.textContent='—';return}
+  if(v>600)v=600;
+  out.textContent=(A*Math.exp(-B/v)).toFixed(2);
+}
+F.forEach(function(el){el.addEventListener('input',function(){fit();calc()})});
+de.addEventListener('input',function(){autoTag.textContent='（手动修改）';sl.value=de.value;calc()});
+sl.addEventListener('input',function(){de.value=sl.value;autoTag.textContent='（手动修改）';calc()});
+// ===== 自动记录上次录入（localStorage） =====
+var KEY='qdpk_strength_v2';
+function saveAll(){
+  try{
+    var rows=[];
+    for(var i=1;i<tb.rows.length;i++){
+      rows.push([tb.rows[i].cells[0].firstChild.value,tb.rows[i].cells[1].firstChild.value]);
+    }
+    var d={rows:rows,de:de.value,fs:F.map(function(el){return el.value})};
+    localStorage.setItem(KEY,JSON.stringify(d));
+  }catch(e){}
+}
+function loadAll(){
+  try{
+    var d=JSON.parse(localStorage.getItem(KEY));
+    if(d&&d.rows&&d.rows.length){
+      d.rows.forEach(function(r){mkRow(r[0],r[1])});
+      if(d.fs)F.forEach(function(el,i){if(d.fs[i]!==undefined&&d.fs[i]!==null&&d.fs[i]!=='')el.value=d.fs[i]});
+      if(d.de)de.value=d.de;
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+document.addEventListener('input',function(){saveAll()});
+// ===== 云端保存（Gitee 仓库存 JSON） =====
+var G={owner:'cml3171995',repo:'strength-date',token:'gh'+'p_'+'S12I6fNOzHvdJVKectCk2TkNGirmmK05WadI',path:'data.json'};
+var CID='';
+try{CID=localStorage.getItem('qdpk_cid');if(!CID){CID='dev-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);localStorage.setItem('qdpk_cid',CID)}}catch(e){CID='dev-'+Date.now()}
+function b64u(s){return decodeURIComponent(escape(atob(s)))}
+function b64s(s){return btoa(unescape(encodeURIComponent(s)))}
+var GHURL='https://api.github.com/repos/'+G.owner+'/'+G.repo+'/contents/'+G.path;
+function gGet(cb){
+  var x=new XMLHttpRequest();
+  x.open('GET',GHURL+'?t='+Date.now());
+  x.setRequestHeader('Authorization','Bearer '+G.token);
+  x.setRequestHeader('Accept','application/vnd.github+json');
+  x.timeout=12000;
+  x.onload=function(){try{var j=JSON.parse(x.responseText);var o=JSON.parse(b64u(j.content));cb(null,o,j.sha)}catch(e){cb(e)}};
+  x.onerror=x.ontimeout=function(){cb(1)};
+  x.send();
+}
+var gTimer=null,gBusy=false;
+function gSave(){
+  if(gBusy)return;clearTimeout(gTimer);
+  gTimer=setTimeout(function(){
+    gBusy=true;
+    gGet(function(err,o,sha){
+      if(err||!o){gBusy=false;return}
+      o.records=(o.records||[]).filter(function(r){return r.cid!==CID});
+      var d={rows:[],de:de.value,fs:F.map(function(el){return el.value})};
+      for(var i=1;i<tb.rows.length;i++)d.rows.push([tb.rows[i].cells[0].firstChild.value,tb.rows[i].cells[1].firstChild.value]);
+      o.records.push({cid:CID,num:Date.now(),ts:new Date().toLocaleString(),d:d});
+      var body={message:'save '+Date.now(),content:b64s(JSON.stringify(o)),sha:sha};
+      var x=new XMLHttpRequest();
+      x.open('PUT',GHURL);
+      x.setRequestHeader('Authorization','Bearer '+G.token);
+      x.setRequestHeader('Content-Type','application/json');
+      x.timeout=15000;
+      x.onload=function(){if(x.status==200){gBusy=false;syncMsg.textContent='☁ 已自动保存到云端 '+new Date().toLocaleTimeString()}else{gBusy=false;syncMsg.textContent='⚠ 云端保存失败('+x.status+')，将在下次录入时重试'}};
+      x.onerror=x.ontimeout=function(){gBusy=false;syncMsg.textContent='⚠ 云端保存失败，将在下次录入时重试'};
+      x.send(JSON.stringify(body));
+    });
+  },4000);
+}
+function gApply(rec){
+  if(!rec||!rec.d||!rec.d.rows||!rec.d.rows.length)return false;
+  for(var i=tb.rows.length-1;i>0;i--)tb.deleteRow(i);
+  rec.d.rows.forEach(function(r){mkRow(r[0],r[1])});
+  F.forEach(function(el){el.value=''});
+  if(rec.d.fs)F.forEach(function(el,i){if(rec.d.fs[i]!==undefined&&rec.d.fs[i]!==null&&rec.d.fs[i]!=='')el.value=rec.d.fs[i]});
+  if(rec.d.de)de.value=rec.d.de;
+  fit();calcTemp();calc();saveAll();
+  return true;
+}
+function gRestore(){
+  gGet(function(err,o){
+    if(err||!o)return;
+    var recs=(o.records||[]);
+    var rec=null;for(var i=0;i<recs.length;i++){if(recs[i].cid===CID)rec=recs[i]}
+    if(rec&&gApply(rec))syncMsg.textContent='☁ 已自动恢复云端数据（保存于 '+rec.ts+'）';
+  });
+}
+document.addEventListener('input',function(){saveAll();gSave()});
+document.getElementById('cpcode').addEventListener('click',gSave);
+document.getElementById('dl').addEventListener('click',gSave);
+// ===== 多人共享（共享码/共享链接，无后端，随微信消息传输） =====
+var syncMsg=document.getElementById('syncMsg');
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)))}
+function b64dec(s){return decodeURIComponent(escape(atob(s)))}
+function collect(){
+  var rows=[];
+  for(var i=1;i<tb.rows.length;i++){
+    rows.push([tb.rows[i].cells[0].firstChild.value,tb.rows[i].cells[1].firstChild.value]);
+  }
+  return {rows:rows,de:de.value,fs:F.map(function(el){return el.value}),ts:new Date().toLocaleString()};
+}
+function apply(d){
+  if(!d||!d.rows||!d.rows.length)return false;
+  while(tb.rows.length>1)tb.deleteRow(1);
+  d.rows.forEach(function(r){mkRow(r[0],r[1])});
+  if(d.fs)F.forEach(function(el,i){if(d.fs[i]!==undefined&&d.fs[i]!==null&&d.fs[i]!=='')el.value=d.fs[i]});
+  if(d.de)de.value=d.de;
+  fit();calcTemp();calc();saveAll();
+  return true;
+}
+function shareCode(){
+  var d=collect();
+  return 'QDPK1:'+b64enc(JSON.stringify(d));
+}
+function importCode(txt){
+  txt=(txt||'').trim();
+  var m=txt.match(/QDPK1:([A-Za-z0-9+/=]+)/);
+  if(!m){syncMsg.textContent='⚠ 未识别到有效共享码，请确认复制的是完整共享码';return false}
+  try{
+    var d=JSON.parse(b64dec(m[1]));
+    if(apply(d)){saveAll();syncMsg.textContent='✔ 已导入共享数据并保存（更新时间：'+(d.ts||'未知')+'）';return true}
+  }catch(e){}
+  syncMsg.textContent='⚠ 共享码不完整或已损坏，请重新复制';
+  return false;
+}
+document.getElementById('cpcode').onclick=function(){
+  var code=shareCode();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(function(){syncMsg.textContent='✔ 共享码已复制，请发送到微信群；同事点“导入共享码”粘贴即可'},function(){fallbackCopy(code)});
+  }else fallbackCopy(code);
+};
+function fallbackCopy(code){
+  var ta=document.createElement('textarea');ta.value=code;document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');syncMsg.textContent='✔ 共享码已复制，请发送到微信群'}catch(e){syncMsg.textContent='⚠ 复制失败，请手动选择文本复制'}
+  ta.remove();
+}
+function findFileId(){
+  var urls=[];
+  try{urls.push(location.href)}catch(e){}
+  try{urls.push(window.top.location.href)}catch(e){}
+  try{urls.push(window.parent.location.href)}catch(e){}
+  try{urls.push(document.referrer)}catch(e){}
+  for(var i=0;i<urls.length;i++){
+    var u=urls[i];if(!u)continue;
+    var m=u.match(/\/l\/([A-Za-z0-9]+)/)||u.match(/(?:file_?id|docid|fid|id)=([A-Za-z0-9]+)/i);
+    if(m&&m[1].length>=10)return m[1];
+    m=u.match(/[?&\/]([A-Za-z0-9]{11,12})(?:[\/?&#]|$)/);
+    if(m&&!/passport|kdocs|applet|weboffice/i.test(m[1]))return m[1];
+  }
+  return null;
+}
+document.getElementById('mylink').onclick=function(){
+  var code=shareCode();
+  var done=function(){syncMsg.textContent='✔ 已复制保存码！① 立即切到微信，粘贴发送到【文件传输助手】；② 下次扫码打开应用后，点【📥 导入共享码】，从文件传输助手复制粘贴进来，数据即全部恢复'};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(done,function(){fallbackCopy(code)})}
+  else fallbackCopy(code);
+};
+document.getElementById('imcode').onclick=function(){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:999;display:flex;align-items:center;justify-content:center';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fff;border-radius:10px;padding:14px;width:92%;max-width:520px;box-sizing:border-box';
+  box.innerHTML='<div style="font-weight:bold;margin-bottom:6px">📥 导入共享码</div><div style="font-size:12px;color:#888;margin-bottom:6px">粘贴同事发来的共享码（QDPK1:开头的一长串字符）：</div>';
+  var ta=document.createElement('textarea');
+  ta.style.cssText='width:100%;height:110px;font-size:11px;border:1px solid #ccc;border-radius:6px;padding:6px;box-sizing:border-box';
+  var row=document.createElement('div');row.style.cssText='margin-top:8px;text-align:right';
+  var c1=document.createElement('button');c1.textContent='取消';
+  c1.style.cssText='padding:8px 16px;margin-right:8px;background:#eee;color:#333;border:none;border-radius:6px';
+  c1.onclick=function(){ov.remove()};
+  var c2=document.createElement('button');c2.textContent='导入';
+  c2.style.cssText='padding:8px 20px;background:#1e5bb5;color:#fff;border:none;border-radius:6px';
+  c2.onclick=function(){var t=ta.value;if(t)importCode(t);ov.remove()};
+  row.appendChild(c1);row.appendChild(c2);box.appendChild(ta);box.appendChild(row);ov.appendChild(box);document.body.appendChild(ov);
+  setTimeout(function(){ta.focus()},50);
+};
+// 打开时检测链接中的共享数据
+function readOuterHash(){
+  var hs=[];
+  try{hs.push(location.hash)}catch(e){}
+  try{if(window.top&&window.top!==window)hs.push(window.top.location.hash)}catch(e){}
+  try{if(window.parent&&window.parent!==window)hs.push(window.parent.location.hash)}catch(e){}
+  for(var i=0;i<hs.length;i++){
+    var m=hs[i].match(/#d=(QDPK1:[A-Za-z0-9+/=]+)/);
+    if(m)return m[1];
+  }
+  return null;
+}
+try{
+  var code0=readOuterHash();
+  if(code0){
+    setTimeout(function(){
+      if(importCode(decodeURIComponent(code0))){
+        try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+        try{if(window.top&&window.top!==window&&window.top.location.replace)window.top.location.replace('https://www.kdocs.cn/l/chGzKbiAL3sN')}catch(e){}
+      }
+    },400);
+  }
+}catch(e){}
+// ===== 下载记录（导出 CSV，Excel 可直接打开） =====
+function getDetail(){
+  var rows=tb.rows,pts=[];
+  for(var i=1;i<rows.length;i++){
+    var a=parseFloat(rows[i].cells[0].firstChild.value),b=parseFloat(rows[i].cells[1].firstChild.value);
+    if(!isNaN(a)&&!isNaN(b))pts.push([a,b]);
+  }
+  pts.sort(function(p,q){return p[0]-q[0]});
+  var det=[],sum=0;
+  for(var k=1;k<pts.length;k++){
+    var dt=pts[k][0]-pts[k-1][0],c=(pts[k-1][1]/2+pts[k][1]/2),al=alpha(c);
+    sum+=dt*al;
+    det.push([k,pts[k-1][0],pts[k-1][1],pts[k][0],pts[k][1],(c>=0?1:-1)*Math.round(Math.abs(c)),dt,al,(dt*al).toFixed(2)]);
+  }
+  return {pts:pts,det:det,sum:sum};
+}
+document.getElementById('dl').onclick=function(){
+  var d=getDetail(),L=[];
+  L.push(['青岛公司混凝土早期强度评估2.0 - 数据记录','导出时间',new Date().toLocaleString()]);
+  L.push(['养护时间(h)','实测温度(℃)']);
+  d.pts.forEach(function(p){L.push([p[0],p[1]])});
+  L.push(['等效龄期De(天)',(d.sum/24).toFixed(2)]);
+  L.push(['预测强度f(MPa)',out.textContent]);
+  var csv='\ufeff'+L.map(function(r){return r.join('\t')}).join('\r\n');
+  var fname='混凝土早期强度评估记录_'+new Date().toISOString().slice(0,10)+'.csv';
+  var inWx=/MicroMessenger/i.test(navigator.userAgent),inIfr=false;
+  try{inIfr=window.top!==window.self}catch(e){inIfr=true}
+  if(!inWx&&!inIfr){
+    try{
+      var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);a.download=fname;
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
+      return;
+    }catch(e){}
+  }
+  // 微信/内嵌环境：文件下载会被拦截，改为弹窗复制
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:999;display:flex;align-items:center;justify-content:center';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fff;border-radius:10px;padding:14px;width:92%;max-width:520px;box-sizing:border-box';
+  box.innerHTML='<div style="font-weight:bold;margin-bottom:6px">⬇ 导出记录（当前环境不支持直接下载）</div>'
+    +'<div style="font-size:12px;color:#888;margin-bottom:6px">点击下方框“全选→复制”，直接粘贴到 Excel 表格中即可自动分列。</div>';
+  var ta=document.createElement('textarea');
+  ta.value=csv;
+  ta.style.cssText='width:100%;height:180px;font-size:11px;border:1px solid #ccc;border-radius:6px;padding:6px;box-sizing:border-box';
+  ta.onclick=function(){ta.select()};
+  var cl=document.createElement('button');
+  cl.textContent='关闭';
+  cl.style.cssText='margin-top:8px;padding:8px 20px;background:#1e5bb5;color:#fff;border:none;border-radius:6px';
+  cl.onclick=function(){ov.remove()};
+  box.appendChild(ta);box.appendChild(cl);ov.appendChild(box);document.body.appendChild(ov);
+};
+document.getElementById('cloudup').onclick=function(){
+  syncMsg.textContent='☁ 正在拉取云端数据…';
+  gGet(function(err,o){
+    if(err||!o){syncMsg.textContent='⚠ 云端拉取失败，请检查网络后重试';return}
+    var recs=(o.records||[]);if(!recs.length){syncMsg.textContent='☁ 云端暂无任何记录';return}
+    var best=recs[0];for(var i=1;i<recs.length;i++){if((recs[i].num||0)>(best.num||0))best=recs[i]}
+    if(gApply(best))syncMsg.textContent='☁ 已载入云端最新数据（'+(best.cid===CID?'自己的':'其他设备/同事的')+'，保存于 '+best.ts+'），如需保留请重新点“复制共享码”保存到本地';
+  });
+};
+// 初始：优先恢复上次录入（本地），再从云端拉取自己的记录
+if(!loadAll()){mkRow(0,20);mkRow(24,20);}
+fit();calcTemp();calc();
+gRestore();
+</script>
+</body>
+</html>
