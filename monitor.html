@@ -131,25 +131,30 @@ function render(recs,pjs){
     if(!groups[c]){groups[c]=[];order.push(c)}
     groups[c].push(r);
   });
-  // 排序：正式项目按注册表顺序，未归属在后，测试最后
+  // 空项目显示0：所有注册项目都生成卡片
+  pjs.forEach(function(p){
+    if(!groups[p.code]){groups[p.code]=[];order.push(p.code)}
+  });
+  // 排序：正式项目按注册表顺序，未归属在后
   order.sort(function(a,b){
-    function w(c){var i=pjs.findIndex(function(p){return p.code===c});return i<0?(c==='CS00001'?99:50):i}
+    function w(c){var i=pjs.findIndex(function(p){return p.code===c});return i<0?98:i}
     return w(a)-w(b);
   });
   var today=new Date().toDateString(),nToday=0,nPart=0;
   recs.forEach(function(r){var d=new Date((r.ts||'').replace(/-/g,'/'));if(!isNaN(d)&&d.toDateString()===today)nToday++});
-  document.getElementById('sP').textContent=order.filter(function(c){return c&&c!=='CS00001'}).length;
+  document.getElementById('sP').textContent=pjs.filter(function(p){return p.code!=='CS00001'}).length;
   document.getElementById('sPart').textContent=recs.length;
   document.getElementById('sRec').textContent=recs.length;
   document.getElementById('sToday').textContent=nToday;
   var html='';
-  if(!order.length)html='<div class="empty">云端暂无任何记录</div>';
+  if(!pjs.length&&!order.length)html='<div class="empty">云端暂无项目</div>';
   order.forEach(function(c){
     var p=pmap[c],g=groups[c];
     nPart+=g.length;
     var nm=p?p.name:(c?'未注册项目':'历史数据（未归属项目）');
     var latest=g.reduce(function(m,r){return Math.max(m,Date.parse((r.ts||'').replace(/-/g,'/'))||0)},0);
     var rowsHtml='';
+    if(!g.length)rowsHtml='<tr><td colspan="5" style="color:#9aa7b5;text-align:center;padding:14px 0">暂无在测部位 · 0 条记录</td></tr>';
     g.forEach(function(r){
       var de=calcDe(r);
       rowsHtml+='<tr><td>'+esc(r.name)+'</td><td>'+esc(r.grade)+'</td><td>'+(r.pour?esc(r.pour.slice(0,10)):'—')+'</td>'
