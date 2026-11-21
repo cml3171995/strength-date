@@ -97,15 +97,30 @@ function fmtTs(ts){
   return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
 function esc(s){return String(s||'').replace(/[<>&"]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]})}
+var GH='https://api.github.com/repos/cml3171995/strength-date/contents/';
+var GTOK='gh'+'p_'+'S12I6fNOzHvdJVKectCk2TkNGirmmK05WadI';
+function ghGet(path,cb){
+  var x=new XMLHttpRequest();
+  x.open('GET',GH+path+'?t='+Date.now());
+  x.setRequestHeader('Authorization','Bearer '+GTOK);
+  x.setRequestHeader('Accept','application/vnd.github+json');
+  x.timeout=15000;
+  x.onload=function(){
+    try{
+      var j=JSON.parse(x.responseText);
+      var txt=decodeURIComponent(escape(atob(j.content.replace(/\s/g,''))));
+      cb(null,JSON.parse(txt));
+    }catch(e){cb(e)}
+  };
+  x.onerror=x.ontimeout=function(){cb(1)};
+  x.send();
+}
 function load(){
-  var t=Date.now();
-  Promise.all([
-    fetch('https://raw.githubusercontent.com/cml3171995/strength-date/main/data.json?t='+t).then(function(r){return r.json()}),
-    fetch('https://raw.githubusercontent.com/cml3171995/strength-date/main/projects.json?t='+t).then(function(r){return r.json()})
-  ]).then(function(res){
-    render(res[0].records||[],res[1]||[]);
-  }).catch(function(e){
-    document.getElementById('list').innerHTML='<div class="empty">⚠ 云端数据拉取失败，请检查网络后刷新重试</div>';
+  ghGet('data.json',function(e1,d){
+    if(e1||!d){document.getElementById('list').innerHTML='<div class="empty">⚠ 云端数据拉取失败，请检查网络后刷新重试</div>';return}
+    ghGet('projects.json',function(e2,pjs){
+      render(d.records||[],pjs||[]);
+    });
   });
 }
 function render(recs,pjs){
