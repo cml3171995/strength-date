@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>青岛公司早期强度评估 · 分公司监管导览</title>
+<style>
+body{font-family:'PingFang SC','Microsoft YaHei',Arial,sans-serif;background:#e8eef6;margin:0;padding:14px;color:#1A1B1C}
+.top{max-width:760px;margin:0 auto;background:linear-gradient(135deg,#005BAC,#0b7bd0);border-radius:16px;padding:18px 20px;color:#fff;box-shadow:0 2px 10px rgba(0,60,120,.25)}
+.top h1{font-size:20px;margin:0}
+.top .s{font-size:12px;opacity:.85;margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.st{background:rgba(255,255,255,.14);border-radius:10px;padding:8px 6px;text-align:center}
+.st b{display:block;font-size:20px}
+.st span{font-size:11px;opacity:.85}
+.wrap{max-width:760px;margin:14px auto 40px}
+.pj{background:#fff;border-radius:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,60,120,.10);overflow:hidden;border-left:6px solid #005BAC}
+.pjh{padding:13px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+.pjh h3{margin:0;font-size:15px;color:#005BAC}
+.pjh .meta{font-size:11px;color:#6b7280;margin-top:3px}
+.badge{flex:0 0 auto;background:#eaf3fb;color:#005BAC;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
+.arrow{color:#9db6cf;font-size:18px;transition:transform .2s}
+.pj.open .arrow{transform:rotate(90deg)}
+.det{display:none;border-top:1px solid #eef2f6;padding:6px 10px 10px;background:#fafcff}
+.pj.open .det{display:block}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{color:#6b7280;font-weight:400;padding:6px 4px;text-align:left;border-bottom:1px solid #e8eef6}
+td{padding:6px 4px;border-bottom:1px solid #f2f5f9}
+.tag{display:inline-block;background:#e7f6ec;color:#1e8e4e;border-radius:6px;padding:1px 6px;font-size:11px}
+.tag.warn{background:#fff3cd;color:#8a6d1a}
+.gate{position:fixed;left:0;top:0;right:0;bottom:0;background:linear-gradient(135deg,#003a72,#005BAC);z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff}
+.gate h2{font-size:18px}
+.gate input{padding:11px;font-size:17px;width:200px;border:none;border-radius:10px;text-align:center;letter-spacing:4px}
+.gate button{margin-top:12px;padding:11px 40px;font-size:15px;border:none;border-radius:10px;background:#fff;color:#005BAC;font-weight:700}
+.gate .e{color:#ffd6d6;font-size:13px;margin-top:8px;display:none}
+.empty{text-align:center;color:#8aa;color:#6b7280;font-size:13px;padding:30px 0}
+.viewbtn{display:inline-block;margin-top:6px;font-size:12px;color:#005BAC;text-decoration:none;background:#eaf3fb;border-radius:8px;padding:5px 10px}
+@media(max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <h2>🔒 分公司监管导览</h2>
+  <div style="font-size:12px;opacity:.8;margin:6px 0 14px">中建八局四公司青岛公司 · 技术质量部</div>
+  <input id="pin" type="password" inputmode="numeric" placeholder="请输入口令">
+  <button onclick="tryPin()">进 入</button>
+  <div class="e" id="gerr">口令错误，请重试</div>
+</div>
+<div class="top">
+  <h1>混凝土早期强度评估 · 监管导览</h1>
+  <div class="s">中建八局第四建设有限公司青岛公司 · 技术质量部</div>
+  <div class="stats">
+    <div class="st"><b id="sP">—</b><span>在建项目</span></div>
+    <div class="st"><b id="sPart">—</b><span>在测部位</span></div>
+    <div class="st"><b id="sRec">—</b><span>记录总数</span></div>
+    <div class="st"><b id="sToday">—</b><span>今日更新</span></div>
+  </div>
+</div>
+<div class="wrap" id="list"><div class="empty">数据加载中…</div></div>
+<script>
+function tryPin(){
+  if(document.getElementById('pin').value.trim()==='8888'){
+    sessionStorage.setItem('sd_mon_ok','1');
+    document.getElementById('gate').style.display='none';
+  }else{
+    document.getElementById('gerr').style.display='block';
+    document.getElementById('pin').value='';
+  }
+}
+document.getElementById('pin').addEventListener('keydown',function(e){if(e.key==='Enter')tryPin()});
+var K={"-15":.06,"-14":.07,"-13":.08,"-12":.08,"-11":.1,"-10":.11,"-9":.12,"-8":.13,"-7":.15,"-6":.17,"-5":.18,"-4":.2,"-3":.22,"-2":.24,"-1":.26,"0":.28,"1":.31,"2":.33,"3":.35,"4":.39,"5":.42,"6":.45,"7":.48,"8":.51,"9":.55,"10":.58,"11":.62,"12":.66,"13":.7,"14":.74,"15":.77,"16":.81,"17":.86,"18":.9,"19":.95,"20":1,"21":1.05,"22":1.1,"23":1.15,"24":1.2,"25":1.25,"26":1.3,"27":.53,"28":1.41,"29":1.47,"30":1.53,"31":1.59,"32":1.66,"33":1.72,"34":1.77,"35":1.84,"36":1.92,"37":1.98,"38":2.04,"39":2.12,"40":2.19,"41":2.25,"42":2.32,"43":2.4,"44":2.48,"45":2.55,"46":2.63,"47":2.71,"48":2.78,"49":2.87,"50":2.95};
+K["30"]=1.53;
+function alpha(c){c=(c>=0?1:-1)*Math.round(Math.abs(c));if(c>50)c=50;if(c<-15)c=-15;return K[String(c)]}
+function calcDe(rec){
+  var d=rec&&rec.d;
+  if(!d||!d.rows)return NaN;
+  var pp=Date.parse(rec.pour||'')||null;
+  var pts=[];
+  d.rows.forEach(function(r){
+    var a=parseFloat(r[0]),b=parseFloat(r[1]);
+    if(isNaN(a)&&typeof r[0]==='string'){
+      var t=Date.parse(r[0]);
+      if(!isNaN(t)&&pp)a=(t-pp)/3600000;
+    }
+    if(!isNaN(a)&&!isNaN(b))pts.push([a,b]);
+  });
+  if(pts.length<2)return NaN;
+  pts.sort(function(p,q){return p[0]-q[0]});
+  var sum=0;
+  for(var k=1;k<pts.length;k++){var dt=pts[k][0]-pts[k-1][0];if(dt<=0)continue;sum+=dt*alpha(pts[k-1][1]/2+pts[k][1]/2)}
+  return sum/24;
+}
+function fmtTs(ts){
+  if(!ts)return '—';
+  var d=new Date(ts.replace ? ts.replace(/-/g,'/') : ts);
+  if(isNaN(d))return ts;
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function esc(s){return String(s||'').replace(/[<>&"]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]})}
+function load(){
+  var t=Date.now();
+  Promise.all([
+    fetch('https://raw.githubusercontent.com/cml3171995/strength-date/main/data.json?t='+t).then(function(r){return r.json()}),
+    fetch('https://raw.githubusercontent.com/cml3171995/strength-date/main/projects.json?t='+t).then(function(r){return r.json()})
+  ]).then(function(res){
+    render(res[0].records||[],res[1]||[]);
+  }).catch(function(e){
+    document.getElementById('list').innerHTML='<div class="empty">⚠ 云端数据拉取失败，请检查网络后刷新重试</div>';
+  });
+}
+function render(recs,pjs){
+  var pmap={};pjs.forEach(function(p){pmap[p.code]=p});
+  var groups={},order=[];
+  recs.forEach(function(r){
+    var c=r.proj||'';
+    if(!groups[c]){groups[c]=[];order.push(c)}
+    groups[c].push(r);
+  });
+  // 排序：正式项目按注册表顺序，未归属在后，测试最后
+  order.sort(function(a,b){
+    function w(c){var i=pjs.findIndex(function(p){return p.code===c});return i<0?(c==='CS00001'?99:50):i}
+    return w(a)-w(b);
+  });
+  var today=new Date().toDateString(),nToday=0,nPart=0;
+  recs.forEach(function(r){var d=new Date((r.ts||'').replace(/-/g,'/'));if(!isNaN(d)&&d.toDateString()===today)nToday++});
+  document.getElementById('sP').textContent=order.filter(function(c){return c&&c!=='CS00001'}).length;
+  document.getElementById('sPart').textContent=recs.length;
+  document.getElementById('sRec').textContent=recs.length;
+  document.getElementById('sToday').textContent=nToday;
+  var html='';
+  if(!order.length)html='<div class="empty">云端暂无任何记录</div>';
+  order.forEach(function(c){
+    var p=pmap[c],g=groups[c];
+    nPart+=g.length;
+    var nm=p?p.name:(c?'未注册项目':'历史数据（未归属项目）');
+    var latest=g.reduce(function(m,r){return Math.max(m,Date.parse((r.ts||'').replace(/-/g,'/'))||0)},0);
+    var rowsHtml='';
+    g.forEach(function(r){
+      var de=calcDe(r);
+      rowsHtml+='<tr><td>'+esc(r.name)+'</td><td>'+esc(r.grade)+'</td><td>'+(r.pour?esc(r.pour.slice(0,10)):'—')+'</td>'
+        +'<td>'+(isNaN(de)?'—':'<span class="tag">'+de.toFixed(1)+'d</span>')+'</td>'
+        +'<td>'+fmtTs(r.ts)+'</td></tr>';
+    });
+    var isTest=(c==='CS00001');
+    html+='<div class="pj'+(isTest?'':'')+'" id="pj'+(c||'none')+'">'
+      +'<div class="pjh" onclick="this.parentNode.classList.toggle(\'open\')">'
+      +'<div style="min-width:0"><h3>'+esc(nm)+(isTest?' <span class="tag warn">测试</span>':'')+'</h3>'
+      +'<div class="meta">'+(p?esc(p.addr):'‌')+' · 最近更新 '+(latest?fmtTs(new Date(latest).toLocaleString()):'—')+'</div></div>'
+      +'<div style="text-align:right"><div class="badge">'+g.length+' 个部位</div><div class="arrow">›</div>'
+      +(p?'<a class="viewbtn" href="https://cml3171995.github.io/strength-date/#p='+c+'" onclick="event.stopPropagation()">项目端 ›</a>':'')
+      +'</div></div>'
+      +'<div class="det"><table><tr><th>部位</th><th>等级</th><th>浇筑日期</th><th>等效龄期De</th><th>最近录入</th></tr>'+rowsHtml+'</table></div>'
+      +'</div>';
+  });
+  document.getElementById('list').innerHTML=html;
+}
+if(sessionStorage.getItem('sd_mon_ok')==='1'){document.getElementById('gate').style.display='none'}
+if(location.hash.indexOf('pin=8888')>=0){sessionStorage.setItem('sd_mon_ok','1');document.getElementById('gate').style.display='none'}
+load();
+</script>
+</body>
+</html>
