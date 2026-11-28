@@ -181,7 +181,6 @@ function syncFfromGrade(){
   var g=gradeEl.value.trim();
   var fs=libFs(g);
   curFv=fs?fs.slice():['','','','',''];
-  document.getElementById('gradeTag').textContent=g||'未关联';
 }
 function toHours(dtStr){
   if(!dtStr||!pourEl.value)return NaN;
@@ -247,14 +246,15 @@ function fit(){
     var v=parseFloat(curFv[i]);
     if(!isNaN(v)&&v>0){xs.push(-1/T[i]);ys.push(Math.log(v))}
   }
-  if(xs.length<2){A=NaN;B=NaN;err.style.display='block';fbox.textContent='等待有效数据…';return}
+  if(xs.length<2){A=NaN;B=NaN;err.style.display='block';
+    fbox.innerHTML='强度公式：<span style="color:#c0392b">等待强度库录入≥2个龄期强度</span>【'+(gradeEl.value.trim()||'未关联')+'】';return}
   err.style.display='none';
   var n=xs.length,sx=0,sy=0,sxx=0,sxy=0;
   for(var j=0;j<n;j++){sx+=xs[j];sy+=ys[j];sxx+=xs[j]*xs[j];sxy+=xs[j]*ys[j]}
   var m=(n*sxy-sx*sy)/(n*sxx-sx*sx),c=(sy-m*sx)/n;
   A=Math.exp(c);B=m;
-  fbox.innerHTML='f = <b>'+A.toFixed(2)+'</b> × e<sup>−<b>'+B.toFixed(3)+'/D</b></sup><br>'+
-    '<span style="font-size:12px;color:#6b7280">（基于 '+n+' 个实测点回归）</span>';
+  fbox.innerHTML='【'+(gradeEl.value.trim()||'未关联')+'】 f = <b>'+A.toFixed(2)+'</b> × e<sup>−<b>'+B.toFixed(3)+'/D</b></sup>'+
+    '<span style="font-size:12px;color:#6b7280">（'+n+'个龄期强度回归）</span>';
 }
 function calc(){
   var v=parseFloat(de.value);
@@ -565,8 +565,7 @@ function renderSum(){
   names.forEach(function(n){
     var p=parts[n]||{};
     var deV=p.d&&p.d.de?parseFloat(p.d.de):NaN;
-    // 用该部位 grade 关联强度库现算预测
-    var fs=p.d&&p.d.fs?p.d.fs:null;
+    var fs=p.d&&p.d.fs?p.d.fs:libFs(p.grade||'');
     var pred='—';
     if(fs&&fs.filter(function(v){return parseFloat(v)>0}).length>=2){
       var xs=[],ys=[];
