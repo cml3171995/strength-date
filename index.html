@@ -330,7 +330,7 @@ document.getElementById('partNew').onclick=function(){
   box.style.cssText='background:#fff;border-radius:10px;padding:14px;width:92%;max-width:520px;box-sizing:border-box';
   box.innerHTML='<div style="font-weight:bold;margin-bottom:8px">🏗 新建工程部位</div>'
    +'<input id="npName" placeholder="部位名称，如：1#楼3层墙柱" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">'
-   +'<select id="npGrade" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left"><option value="">— 请选择强度等级 —</option></select>'
+
    +'<input id="npPour" type="datetime-local" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">';
   var row=document.createElement('div');row.style.cssText='margin-top:4px;text-align:right';
   var c1=document.createElement('button');c1.className='ghost';c1.textContent='取消';
@@ -339,7 +339,7 @@ document.getElementById('partNew').onclick=function(){
   c2.onclick=function(){
     var n=document.getElementById('npName').value.trim();
     if(!n){document.getElementById('npName').style.border='1px solid #d00';return}
-    parts[n]={grade:document.getElementById('npGrade').value.trim(),pour:document.getElementById('npPour').value.trim(),d:null,ts:new Date().toLocaleString(),num:Date.now()};
+    parts[n]={grade:'',pour:document.getElementById('npPour').value.trim(),d:null,ts:new Date().toLocaleString(),num:Date.now()};
     saveParts();ov.remove();applyPart(n);gSave();
   };
   row.appendChild(c1);row.appendChild(c2);box.appendChild(row);ov.appendChild(box);document.body.appendChild(ov);
