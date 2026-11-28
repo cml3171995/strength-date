@@ -85,12 +85,6 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#005BAC}
 <span id="deH" style="font-size:12px;color:#6b7280"></span>
 <div class="err" id="tempErr"></div></div>
 
-<div class="fbox" id="fbox" style="margin-top:12px">强度公式：已关联【<span id="gradeTag">—</span>】</div>
-<div class="err" id="err">⚠ 请在“强度库”页为当前强度等级录入至少 2 个龄期强度点</div>
-
-<label style="display:flex;justify-content:space-between;align-items:baseline">等效龄期 De（天）<span class="auto" id="autoTag">自动取自测温</span></label>
-<input id="de" type="number" min="0.1" max="600" step="0.01" value="3.11" inputmode="decimal">
-<input id="sl" type="range" min="0.1" max="30" step="0.01" value="3.11">
 <div class="res">
 <div class="lab">预测强度 f（MPa）</div>
 <div class="val" id="out">—</div>
@@ -104,6 +98,8 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#005BAC}
 <div style="font-size:13px;color:#6b7280;margin-bottom:8px">按强度等级录入商混站提供的各龄期试块强度（MPa），主界面新建部位时选等级自动关联</div>
 <div id="growWrap"></div>
 <button class="ghost" id="growAdd" type="button" style="margin-top:8px">＋ 新增强度等级</button>
+<div class="fbox" id="libFbox" style="margin-top:14px;display:none"></div>
+<canvas id="libCurve" width="380" height="220" style="width:100%;max-width:420px;margin-top:10px;display:none;border:1px solid #dbe6f1;border-radius:10px;background:#fff"></canvas>
 <div class="note">测温提示：达到受冻临界强度前每隔 4~6h 测一次温度，达到后放宽至 12~24h。</div>
 </div>
 
@@ -163,8 +159,9 @@ K["30"]=1.53;
 function alpha(c){c=(c>=0?1:-1)*Math.round(Math.abs(c));if(c>50)c=50;if(c<-15)c=-15;return K[String(c)]}
 var tb=document.getElementById('ttemp'),addBtn=document.getElementById('addRow'),
     deOut=document.getElementById('deOut'),deH=document.getElementById('deH'),tempErr=document.getElementById('tempErr'),
-    de=document.getElementById('de'),sl=document.getElementById('sl'),out=document.getElementById('out'),
-    fbox=document.getElementById('fbox'),err=document.getElementById('err'),autoTag=document.getElementById('autoTag');
+    out=document.getElementById('out'),
+    fbox=document.getElementById('libFbox'),err=document.getElementById('err');
+var de={value:0}; // 伪元素：De 仅来自测温计算，不再有手动输入
 var T=[1,2,3,7,28], A=NaN,B=NaN;
 // ===== 强度库（按项目隔离，完全手工建库） =====
 var gradeLib=[]; // [{grade:'C30',fs:[4,11,15.4,21.8,'']}]
@@ -237,8 +234,8 @@ function calcTemp(){
   }
   deOut.textContent=(sum/24).toFixed(2);
   deH.textContent='（累计 '+sum.toFixed(1)+' h）';
-  de.value=(sum/24).toFixed(2);sl.value=Math.min(Math.max(sum/24,0.1),30);
-  calc();
+  de.value=sum/24;
+  fit();calc();
 }
 addBtn.onclick=function(){mkRow(null,null)};
 document.getElementById('clearAll').onclick=function(){
@@ -253,24 +250,57 @@ function fit(){
     var v=parseFloat(curFv[i]);
     if(!isNaN(v)&&v>0){xs.push(-1/T[i]);ys.push(Math.log(v))}
   }
-  if(xs.length<2){A=NaN;B=NaN;err.style.display='block';
-    fbox.innerHTML='强度公式：<span style="color:#c0392b">等待强度库录入≥2个龄期强度</span>【'+(gradeEl.value.trim()||'未关联')+'】';return}
-  err.style.display='none';
+  if(xs.length<2){A=NaN;B=NaN;
+    fbox.innerHTML='<span style="color:#6b7280">为每个强度等级录入≥2个龄期强度后，此处显示回归公式与曲线</span>';return}
+  if(err)err.style.display='none';
   var n=xs.length,sx=0,sy=0,sxx=0,sxy=0;
   for(var j=0;j<n;j++){sx+=xs[j];sy+=ys[j];sxx+=xs[j]*xs[j];sxy+=xs[j]*ys[j]}
   var m=(n*sxy-sx*sy)/(n*sxx-sx*sx),c=(sy-m*sx)/n;
   A=Math.exp(c);B=m;
-  fbox.innerHTML='【'+(gradeEl.value.trim()||'未关联')+'】 f = <b>'+A.toFixed(2)+'</b> × e<sup>−<b>'+B.toFixed(3)+'/D</b></sup>'+
+  fbox.style.display='block';
+  fbox.innerHTML='当前选中等级【<b>'+(gradeEl.value.trim()||'—')+'</b>】：f = <b>'+A.toFixed(2)+'</b> × e<sup>−<b>'+B.toFixed(3)+'/D</b></sup>'+
     '<span style="font-size:12px;color:#6b7280">（'+n+'个龄期强度回归）</span>';
+  drawCurve();
+}
+function drawCurve(){
+  var cv=document.getElementById('libCurve');
+  if(!cv||isNaN(A))return;
+  cv.style.display='block';
+  var ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#dbe6f1';ctx.lineWidth=1;
+  for(var i=0;i<=4;i++){var y=H-30-i*(H-50)/4;ctx.beginPath();ctx.moveTo(30,y);ctx.lineTo(W-10,y);ctx.stroke()}
+  // 曲线 D:0.5~28
+  ctx.strokeStyle='#005BAC';ctx.lineWidth=2;
+  ctx.beginPath();
+  for(var d=0.5;d<=28;d+=0.2){
+    var f=A*Math.exp(-B/d);
+    var x=30+(d-0.5)/27.5*(W-40);
+    var y=H-30-(f/30)*(H-50);
+    if(d<=0.6)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  // 实测点
+  var fs=curFv;
+  ctx.fillStyle='#c0392b';
+  T.forEach(function(d,ci){
+    var v=parseFloat(fs[ci]);
+    if(!isNaN(v)&&v>0){
+      var x=30+(d-0.5)/27.5*(W-40);
+      var y=H-30-(v/30)*(H-50);
+      ctx.beginPath();ctx.arc(x,y,3.5,0,7);ctx.fill();
+    }
+  });
+  ctx.fillStyle='#6b7280';ctx.font='10px sans-serif';
+  ctx.fillText('0',24,H-16);ctx.fillText('28d',W-26,H-16);
 }
 function calc(){
-  var v=parseFloat(de.value);
+  var v=parseFloat(deOut.textContent);
   if(isNaN(A)||isNaN(v)||v<=0){out.textContent='—';return}
   if(v>600)v=600;
   out.textContent=(A*Math.exp(-B/v)).toFixed(2);
 }
-de.addEventListener('input',function(){autoTag.textContent='（手动修改）';sl.value=de.value;calc()});
-sl.addEventListener('input',function(){de.value=sl.value;autoTag.textContent='（手动修改）';calc()});
 // ===== 工程部位管理（多施工段/楼层） =====
 var gradeEl=document.getElementById('grade'),pourEl=document.getElementById('pour'),
     partSel=document.getElementById('partSel');
@@ -301,7 +331,7 @@ function applyPart(name){
     });
     curFv=['','','','',''];
     if(p.d.fs)curFv=p.d.fs.slice();
-    if(p.d.de)de.value=p.d.de;
+    if(p.d.de){deOut.textContent=p.d.de;de.value=parseFloat(p.d.de)}
     gradeEl.value=p.grade||'';pourEl.value=p.pour||'';
   }else{
     mkRow(0,20);mkRow(24,20);
@@ -353,7 +383,7 @@ function saveAll(){
     for(var i=1;i<tb.rows.length;i++){
       rows.push([tb.rows[i].cells[0].firstChild.value,tb.rows[i].cells[1].firstChild.value]);
     }
-    var d={rows:rows,de:de.value,fs:curFv.slice()};
+    var d={rows:rows,de:parseFloat(deOut.textContent)||de.value,fs:curFv.slice()};
     localStorage.setItem(KEY,JSON.stringify(d));
     if(curPart){
       var p=parts[curPart]||(parts[curPart]={});
@@ -413,7 +443,7 @@ function gApply(rec){
   });
   curFv=['','','','',''];
   if(rec.d.fs)curFv=rec.d.fs.slice();
-  if(rec.d.de)de.value=rec.d.de;
+  if(rec.d.de){deOut.textContent=rec.d.de;de.value=parseFloat(rec.d.de)}
   if(rec.pour)pourEl.value=rec.pour;
   if(rec.grade)gradeEl.value=rec.grade;
   fit();calcTemp();calc();saveAll();
