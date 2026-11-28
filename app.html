@@ -63,7 +63,7 @@ input[type=range]{width:100%;margin-top:10px;accent-color:#005BAC}
 <button class="ghost" id="partNew" type="button" style="padding:8px 12px">＋ 新建部位</button>
 </div>
 <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-<input id="grade" class="ok" placeholder="强度等级 如C30" style="flex:1;min-width:120px;text-align:left">
+<select id="grade" style="flex:1;min-width:120px;padding:8px;font-size:15px;border:1px solid #cdddf0;border-radius:8px;background:#fff;text-align:left"><option value="">— 请选择强度等级 —</option></select>
 <input id="pour" class="ok" type="datetime-local" style="flex:1;min-width:170px;text-align:left">
 </div>
 </div>
@@ -171,6 +171,13 @@ var gradeLib=[]; // [{grade:'C30',fs:[4,11,15.4,21.8,'']}]
 function saveLib(){try{localStorage.setItem('qdpk_gradeLib'+PKEY,JSON.stringify(gradeLib))}catch(e){}}
 function loadLib(){try{var s=localStorage.getItem('qdpk_gradeLib'+PKEY);if(s)gradeLib=JSON.parse(s)||[]}catch(e){}}
 function libFs(g){var r=gradeLib.find(function(x){return x.grade===g});return r?r.fs:null}
+function refreshGradeSel(){
+  var opts='<option value="">— 请选择强度等级 —</option>'+gradeLib.filter(function(x){return x.grade}).map(function(x){return '<option value="'+x.grade+'">'+x.grade+'</option>'}).join('');
+  var g1=document.getElementById('grade'),g2=document.getElementById('npGrade');
+  var keep1=g1.value,keep2=g2?g2.value:'';
+  g1.innerHTML=opts;if(keep1)g1.value=keep1;
+  if(g2){g2.innerHTML=opts;if(keep2)g2.value=keep2}
+}
 // 当前界面 F 为伪数组（动态值对象），兼容旧代码 F[i].value
 var curFv=['','','','',''];
 var F={length:5,
@@ -310,7 +317,7 @@ function collectState(){
   return {rows:rows,de:de.value,fs:curFv.slice()};
 }
 partSel.addEventListener('change',function(){applyPart(partSel.value)});
-gradeEl.addEventListener('input',function(){syncFfromGrade();fit();calc();saveAll()});
+gradeEl.addEventListener('change',function(){syncFfromGrade();fit();calc();saveAll()});
 pourEl.addEventListener('input',function(){saveAll()});
 pourEl.addEventListener('input',function(){
   for(var i=1;i<tb.rows.length;i++){var idt=tb.rows[i].cells[0].firstChild;var h=toHours(idt.value);if(!isNaN(h))tb.rows[i].cells[1].firstChild.value=h}
@@ -323,7 +330,7 @@ document.getElementById('partNew').onclick=function(){
   box.style.cssText='background:#fff;border-radius:10px;padding:14px;width:92%;max-width:520px;box-sizing:border-box';
   box.innerHTML='<div style="font-weight:bold;margin-bottom:8px">🏗 新建工程部位</div>'
    +'<input id="npName" placeholder="部位名称，如：1#楼3层墙柱" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">'
-   +'<input id="npGrade" placeholder="强度等级，如 C30" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">'
+   +'<select id="npGrade" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left"><option value="">— 请选择强度等级 —</option></select>'
    +'<input id="npPour" type="datetime-local" style="width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:8px;text-align:left">';
   var row=document.createElement('div');row.style.cssText='margin-top:4px;text-align:right';
   var c1=document.createElement('button');c1.className='ghost';c1.textContent='取消';
@@ -336,7 +343,7 @@ document.getElementById('partNew').onclick=function(){
     saveParts();ov.remove();applyPart(n);gSave();
   };
   row.appendChild(c1);row.appendChild(c2);box.appendChild(row);ov.appendChild(box);document.body.appendChild(ov);
-  setTimeout(function(){document.getElementById('npName').focus()},60);
+  setTimeout(function(){document.getElementById('npName').focus();refreshGradeSel()},60);
 };
 // ===== 自动记录上次录入（localStorage） =====
 var KEY='qdpk_strength_v2';
@@ -551,10 +558,11 @@ function renderLib(){
     });
     row.appendChild(head);row.appendChild(row2);wrap.appendChild(row);
   });
+  refreshGradeSel();
 }
 document.getElementById('growAdd').onclick=function(){
   gradeLib.push({grade:'',fs:['','','','','']});
-  saveLib();renderLib();
+  saveLib();renderLib();refreshGradeSel();
 };
 
 // ===== 汇总渲染 =====
@@ -606,7 +614,7 @@ function renderSum(){
   });
 }
 
-loadLib();
+loadLib();refreshGradeSel();
 try{curPart=localStorage.getItem('qdpk_curpart'+PKEY)||''}catch(e){}
 applyPart(curPart);
 gRestore();
